@@ -1,0 +1,48 @@
+name: Sync with Upstream
+
+# 赋予写权限，以便将更新推送到你的仓库
+permissions:
+  contents: write
+
+on:
+  # 计划任务：每天北京时间上午 8:00 运行 (UTC 0:00)
+  schedule:
+    - cron: '0 0 * * *'
+  # 允许手动触发：在 Actions 页面点击 "Run workflow" 按钮
+  workflow_dispatch:
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    name: Sync latest commits from upstream repo
+
+    steps:
+    # 1. 检出你的代码
+    - name: Checkout target repo
+      uses: actions/checkout@v3
+      with:
+        ref: master             # 对应你的分支
+        fetch-depth: 0          # 获取完整历史以便合并
+
+    # 2. 配置 Git 机器人信息
+    - name: Config git
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+    # 3. 拉取原仓库并合并
+    - name: Merge Upstream
+      run: |
+        # 设置原仓库地址
+        git remote add upstream https://github.com/xiaoyaocz/dart_simple_live.git
+        git fetch upstream
+        
+        # 确保切换到 master 分支
+        git checkout master
+        
+        # 合并原仓库的 master 分支
+        # 使用 --allow-unrelated-histories 防止某些极端的合并拒绝情况
+        git merge upstream/master 
+        
+        # 推送到你的仓库
+        git push origin master

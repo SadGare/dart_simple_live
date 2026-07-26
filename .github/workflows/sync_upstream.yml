@@ -1,0 +1,44 @@
+name: Sync upstream
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 */6 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync master and dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge upstream branches
+        env:
+          UPSTREAM_REPOSITORY: xiaoyaocz/dart_simple_live
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+
+          for branch in master dev; do
+            echo "::group::Sync ${branch}"
+            git fetch origin "${branch}"
+            git fetch upstream "${branch}"
+            git checkout -B "${branch}" "origin/${branch}"
+            git merge --no-edit "upstream/${branch}"
+            git push origin "${branch}"
+            echo "::endgroup::"
+          done

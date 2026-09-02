@@ -38,15 +38,16 @@ jobs:
             git fetch origin "${branch}"
             git fetch upstream "${branch}"
             git checkout -B "${branch}" "origin/${branch}"
-            git merge --no-edit "upstream/${branch}"
+            git merge --no-ff --no-commit "upstream/${branch}"
 
             # The default GITHUB_TOKEN cannot update workflow files. Retain the
             # fork-owned workflows while syncing all other upstream changes.
             git restore --source="origin/${branch}" --staged --worktree -- .github/workflows
 
-            if git diff --quiet "origin/${branch}"; then
+            if git diff --cached --quiet; then
               echo "No changes to push for ${branch}"
             else
+              git commit --no-verify --no-edit
               git push origin "${branch}"
             fi
             echo "::endgroup::"
